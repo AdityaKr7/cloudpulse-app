@@ -1,0 +1,25 @@
+{
+  "name": "cloudpulse-ec2-app",
+  "version": "1.0.0",
+  "description": "Production-ready Web App & Interactive Guide for AWS EC2 Ubuntu Hosting",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "aws",
+    "ec2",
+    "ubuntu",
+    "nginx",
+    "pm2",
+    "express"
+  ],
+  "author": "Aditya",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  }
+}

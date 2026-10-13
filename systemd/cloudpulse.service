@@ -1,0 +1,31 @@
+# Systemd service unit file for CloudPulse (Alternative to PM2)
+# File location on EC2: /etc/systemd/system/cloudpulse.service
+#
+# Commands to activate:
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable cloudpulse
+#   sudo systemctl start cloudpulse
+#   sudo systemctl status cloudpulse
+
+[Unit]
+Description=CloudPulse Express Node.js Web Application
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/var/www/cloudpulse-app
+ExecStart=/usr/bin/node /var/www/cloudpulse-app/server.js
+Restart=always
+RestartSec=5
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=cloudpulse
+
+# Environment variables
+Environment=NODE_ENV=production
+Environment=PORT=5000
+Environment=HOST=0.0.0.0
+
+[Install]
+WantedBy=multi-user.target

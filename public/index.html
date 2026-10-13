@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CloudPulse | AWS EC2 Ubuntu Web App & Hosting Architecture</title>
+  <meta name="description" content="Production-ready Node.js web application and interactive guide for deploying and hosting on AWS EC2 Ubuntu with PM2 and Nginx.">
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Ambient Glow Effects -->
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+  <div class="ambient-glow glow-3"></div>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <i class="fa-solid fa-server"></i>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">CloudPulse</span>
+          <span class="brand-badge">AWS EC2 Ready</span>
+        </div>
+      </div>
+      
+      <div class="server-status-pill" id="server-status-pill">
+        <span class="pulse-indicator"></span>
+        <span class="status-text" id="status-text">Server: Connecting...</span>
+        <span class="latency-text" id="latency-text">-- ms</span>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#monitor" class="nav-link active"><i class="fa-solid fa-gauge-high"></i> Live Monitor</a>
+        <a href="#architecture" class="nav-link"><i class="fa-solid fa-diagram-project"></i> Architecture</a>
+        <a href="#deployment" class="nav-link"><i class="fa-solid fa-terminal"></i> EC2 Guide & CLI</a>
+        <a href="#api-tester" class="nav-link"><i class="fa-solid fa-bolt"></i> API Tester</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="main-content">
+    <section class="hero-section">
+      <div class="hero-badge">
+        <i class="fa-brands fa-aws"></i> AWS EC2 Ubuntu Deployment Lab
+      </div>
+      <h1 class="hero-title">
+        Deploy, Monitor & Master <span class="gradient-text">AWS EC2 Hosting</span>
+      </h1>
+      <p class="hero-subtitle">
+        This Node.js & Express application is wired with production diagnostics, PM2 clustering, and Nginx reverse proxy configurations. Follow our live interactive guide to launch and host it on your own AWS Ubuntu instance!
+      </p>
+      
+      <div class="hero-actions">
+        <a href="#deployment" class="btn btn-primary" id="btn-jump-deploy">
+          <i class="fa-solid fa-rocket"></i> Launch on EC2 Step-by-Step
+        </a>
+        <a href="#monitor" class="btn btn-secondary" id="btn-jump-monitor">
+          <i class="fa-solid fa-chart-line"></i> View Live Server Metrics
+        </a>
+      </div>
+    </section>
+
+    <!-- Section 1: Live System & Server Diagnostics -->
+    <section id="monitor" class="section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-tag"><i class="fa-solid fa-microchip"></i> Real-time Telemetry</span>
+          <h2 class="section-title">Live Server Diagnostics</h2>
+        </div>
+        <button class="btn btn-sm btn-outline" id="btn-refresh-metrics">
+          <i class="fa-solid fa-rotate"></i> Refresh Now
+        </button>
+      </div>
+
+      <div class="metrics-grid">
+        <!-- Card 1: Server Status & Host -->
+        <div class="metric-card glass-panel" id="card-server-info">
+          <div class="card-icon cyan"><i class="fa-solid fa-network-wired"></i></div>
+          <div class="metric-content">
+            <span class="metric-label">Host & Platform</span>
+            <div class="metric-value-wrap">
+              <span class="metric-val" id="metric-hostname">Loading...</span>
+            </div>
+            <div class="metric-footer">
+              <span id="metric-platform">OS: Linux</span>
+              <span class="badge" id="metric-env-badge">development</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Uptime -->
+        <div class="metric-card glass-panel" id="card-uptime">
+          <div class="card-icon emerald"><i class="fa-solid fa-clock"></i></div>
+          <div class="metric-content">
+            <span class="metric-label">App Uptime</span>
+            <div class="metric-value-wrap">
+              <span class="metric-val" id="metric-uptime">0d 0h 0m 0s</span>
+            </div>
+            <div class="metric-footer">
+              <span>PID: <strong id="metric-pid">--</strong></span>
+              <span id="metric-node-version">Node --</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Memory Usage -->
+        <div class="metric-card glass-panel" id="card-memory">
+          <div class="card-icon violet"><i class="fa-solid fa-memory"></i></div>
+          <div class="metric-content">
+            <span class="metric-label">System RAM Usage</span>
+            <div class="metric-value-wrap">
+              <span class="metric-val" id="metric-mem-percent">0%</span>
+              <span class="metric-unit" id="metric-mem-detail">0 / 0 MB</span>
+            </div>
+            <div class="progress-bar-container">
+              <div class="progress-bar" id="mem-progress-bar" style="width: 0%"></div>
+            </div>
+            <div class="metric-footer">
+              <span>EC2 Free Tier Target: &lt; 80%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Architecture & Cores -->
+        <div class="metric-card glass-panel" id="card-cpu">
+          <div class="card-icon amber"><i class="fa-solid fa-microchip"></i></div>
+          <div class="metric-content">
+            <span class="metric-label">CPU Cores & Load</span>
+            <div class="metric-value-wrap">
+              <span class="metric-val" id="metric-cpu-cores">1 Core</span>
+            </div>
+            <div class="metric-footer">
+              <span id="metric-cpu-load">Load: [0.00, 0.00, 0.00]</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Environment & Reverse Proxy Inspection Bar -->
+      <div class="glass-panel env-banner" id="proxy-inspection-panel">
+        <div class="env-banner-col">
+          <span class="env-label"><i class="fa-solid fa-shield-halved"></i> Reverse Proxy Detection:</span>
+          <span class="env-status" id="nginx-status-badge">
+            <i class="fa-solid fa-circle-question"></i> Checking...
+          </span>
+        </div>
+        <div class="env-banner-col">
+          <span class="env-label"><i class="fa-brands fa-aws"></i> Infrastructure:</span>
+          <span class="env-status" id="cloud-status-badge">
+            <i class="fa-solid fa-laptop-code"></i> Local Workspace
+          </span>
+        </div>
+        <div class="env-banner-col">
+          <span class="env-label"><i class="fa-solid fa-network-wired"></i> Client IP:</span>
+          <span class="env-value" id="client-ip-text">127.0.0.1</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Interactive Architecture Diagram -->
+    <section id="architecture" class="section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-tag"><i class="fa-solid fa-sitemap"></i> High-Level Overview</span>
+          <h2 class="section-title">The Complete AWS EC2 Web Stack</h2>
+        </div>
+        <p class="section-desc">
+          Click on any layer below to understand its role, port bindings, security safeguards, and configuration file.
+        </p>
+      </div>
+
+      <div class="arch-flow-container">
+        <!-- Layer 1: Client / Web -->
+        <div class="arch-node glass-panel active" data-node="client" id="node-client">
+          <div class="node-icon"><i class="fa-solid fa-globe"></i></div>
+          <div class="node-title">1. Public Web</div>
+          <div class="node-badge">User Browser</div>
+          <div class="node-detail">Port 80 / 443</div>
+        </div>
+
+        <div class="arch-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- Layer 2: AWS Security Group -->
+        <div class="arch-node glass-panel" data-node="sg" id="node-sg">
+          <div class="node-icon"><i class="fa-solid fa-shield-virus"></i></div>
+          <div class="node-title">2. AWS Security Group</div>
+          <div class="node-badge">Virtual Firewall</div>
+          <div class="node-detail">Allow Ports 22, 80, 443</div>
+        </div>
+
+        <div class="arch-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- Layer 3: Ubuntu Nginx -->
+        <div class="arch-node glass-panel" data-node="nginx" id="node-nginx">
+          <div class="node-icon"><i class="fa-solid fa-arrows-split-up-and-left"></i></div>
+          <div class="node-title">3. Nginx Reverse Proxy</div>
+          <div class="node-badge">Reverse Proxy & SSL</div>
+          <div class="node-detail">Port 80/443 &rarr; 5000</div>
+        </div>
+
+        <div class="arch-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- Layer 4: PM2 Process Manager -->
+        <div class="arch-node glass-panel" data-node="pm2" id="node-pm2">
+          <div class="node-icon"><i class="fa-solid fa-infinity"></i></div>
+          <div class="node-title">4. PM2 Daemon</div>
+          <div class="node-badge">Process Manager</div>
+          <div class="node-detail">Auto-restart & logs</div>
+        </div>
+
+        <div class="arch-arrow"><i class="fa-solid fa-arrow-right"></i></div>
+
+        <!-- Layer 5: Node.js Express -->
+        <div class="arch-node glass-panel" data-node="app" id="node-app">
+          <div class="node-icon"><i class="fa-brands fa-node-js"></i></div>
+          <div class="node-title">5. Express Web App</div>
+          <div class="node-badge">CloudPulse</div>
+          <div class="node-detail">127.0.0.1:5000</div>
+        </div>
+      </div>
+
+      <!-- Architecture Detail Card -->
+      <div class="arch-detail-box glass-panel" id="arch-detail-display">
+        <div class="detail-header">
+          <div class="detail-title-wrap">
+            <span class="detail-tag" id="arch-tag">CLIENT LAYER</span>
+            <h3 class="detail-title" id="arch-title">Public Web Traffic</h3>
+          </div>
+          <span class="detail-badge" id="arch-port">Ports: 80 (HTTP) & 443 (HTTPS)</span>
+        </div>
+        <p class="detail-description" id="arch-desc">
+          When users type your EC2 Public IP or custom domain into their browser, the request travels across the internet targeting Port 80 (standard HTTP) or Port 443 (encrypted HTTPS).
+        </p>
+        <div class="detail-config-preview">
+          <span class="config-label" id="arch-config-label"><i class="fa-solid fa-file-code"></i> Key Concept:</span>
+          <pre class="code-snippet" id="arch-code"><code>http://your-ec2-ip:80  --> Enters AWS Virtual Private Cloud (VPC)</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: Step-by-Step EC2 Deployment Guide & Interactive CLI Generator -->
+    <section id="deployment" class="section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-tag"><i class="fa-solid fa-rocket"></i> Hands-on Tutorial</span>
+          <h2 class="section-title">AWS EC2 Hosting Roadmap & Command Generator</h2>
+        </div>
+        <p class="section-desc">
+          Customize the values below with your EC2 details to generate instant, copy-paste ready commands for every single step!
+        </p>
+      </div>
+
+      <!-- User Input Configurator for Dynamic Commands -->
+      <div class="glass-panel config-generator-panel">
+        <div class="generator-header">
+          <i class="fa-solid fa-sliders"></i>
+          <span>Personalize Your Commands</span>
+        </div>
+        <div class="inputs-row">
+          <div class="input-group">
+            <label for="input-ec2-ip">EC2 Public IPv4 Address:</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-globe"></i>
+              <input type="text" id="input-ec2-ip" value="13.233.54.120" placeholder="e.g. 54.12.34.56">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="input-key-name">AWS Key Pair (.pem file name):</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-key"></i>
+              <input type="text" id="input-key-name" value="my-ec2-key.pem" placeholder="e.g. server-key.pem">
+            </div>
+          </div>
+          <div class="input-group">
+            <label for="input-domain">Domain Name (Optional):</label>
+            <div class="input-with-icon">
+              <i class="fa-solid fa-link"></i>
+              <input type="text" id="input-domain" value="cloudpulse.example.com" placeholder="e.g. myapp.com">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stepper Guide -->
+      <div class="stepper-container">
+        <!-- Step 1 -->
+        <div class="step-card glass-panel" id="step-1">
+          <div class="step-badge">STEP 1</div>
+          <div class="step-header">
+            <h3>Launch an Ubuntu 24.04 LTS EC2 Instance</h3>
+            <span class="step-pill aws-pill"><i class="fa-brands fa-aws"></i> AWS Console</span>
+          </div>
+          <p class="step-text">
+            Go to <strong>AWS Management Console &rarr; EC2 &rarr; Launch Instance</strong>.
+          </p>
+          <ul class="step-list">
+            <li><strong>Name:</strong> <code>CloudPulse-Server</code></li>
+            <li><strong>AMI:</strong> <code>Ubuntu Server 24.04 LTS (HVM)</code> (Free tier eligible)</li>
+            <li><strong>Instance Type:</strong> <code>t2.micro</code> (or <code>t3.micro</code>)</li>
+            <li><strong>Key Pair:</strong> Select or create a new key pair (e.g. <code class="key-name-display">my-ec2-key.pem</code>), download it to your local machine.</li>
+            <li><strong>Network / Security Group:</strong> Check:
+              <span class="tag-inline tag-ssh"><i class="fa-solid fa-check"></i> Allow SSH (Port 22)</span>
+              <span class="tag-inline tag-http"><i class="fa-solid fa-check"></i> Allow HTTP (Port 80)</span>
+              <span class="tag-inline tag-https"><i class="fa-solid fa-check"></i> Allow HTTPS (Port 443)</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="step-card glass-panel" id="step-2">
+          <div class="step-badge">STEP 2</div>
+          <div class="step-header">
+            <h3>Connect to Your EC2 Instance via SSH</h3>
+            <span class="step-pill terminal-pill"><i class="fa-solid fa-terminal"></i> Local Terminal</span>
+          </div>
+          <p class="step-text">
+            Open your local terminal in the folder where your <code>.pem</code> file was downloaded. Restrict key permissions and connect:
+          </p>
+          <div class="command-box">
+            <div class="command-box-header">
+              <span>Terminal (SSH)</span>
+              <button class="btn-copy" data-target="cmd-ssh"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+            <pre><code id="cmd-ssh"># 1. Set strict read-only permissions for your private key
+chmod 400 my-ec2-key.pem
+
+# 2. SSH into your Ubuntu instance as the default 'ubuntu' user
+ssh -i my-ec2-key.pem ubuntu@13.233.54.120</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="step-card glass-panel" id="step-3">
+          <div class="step-badge">STEP 3</div>
+          <div class="step-header">
+            <h3>Install Node.js LTS, Git, and PM2 on Ubuntu</h3>
+            <span class="step-pill ubuntu-pill"><i class="fa-brands fa-ubuntu"></i> EC2 Terminal</span>
+          </div>
+          <p class="step-text">
+            Once inside your EC2 terminal, update system packages and install Node.js 20/22 LTS and PM2 globally:
+          </p>
+          <div class="command-box">
+            <div class="command-box-header">
+              <span>Ubuntu Shell</span>
+              <button class="btn-copy" data-target="cmd-install"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+            <pre><code id="cmd-install"># Update package index
+sudo apt update && sudo apt upgrade -y
+
+# Install Node.js LTS (v20) via NodeSource
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+sudo apt install -y nodejs git build-essential
+
+# Verify versions
+node -v && npm -v
+
+# Install PM2 globally (Process Manager for production)
+sudo npm install -g pm2</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="step-card glass-panel" id="step-4">
+          <div class="step-badge">STEP 4</div>
+          <div class="step-header">
+            <h3>Deploy App & Start with PM2 (Daemon)</h3>
+            <span class="step-pill node-pill"><i class="fa-brands fa-node-js"></i> EC2 Terminal</span>
+          </div>
+          <p class="step-text">
+            Place your app code in <code>/var/www/cloudpulse-app</code>, install dependencies, and launch it with PM2 so it stays running in the background and restarts automatically if the server reboots!
+          </p>
+          <div class="command-box">
+            <div class="command-box-header">
+              <span>Ubuntu Shell</span>
+              <button class="btn-copy" data-target="cmd-pm2"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+            <pre><code id="cmd-pm2"># Create application directory
+sudo mkdir -p /var/www/cloudpulse-app
+sudo chown -R ubuntu:ubuntu /var/www/cloudpulse-app
+cd /var/www/cloudpulse-app
+
+# Clone your repository (or copy files via scp/git)
+# git clone <your-git-repo-url> .
+
+# Install dependencies
+npm install --omit=dev
+
+# Start app using PM2 ecosystem configuration
+pm2 start ecosystem.config.cjs --env production
+
+# Configure PM2 to auto-start on server reboots
+pm2 startup
+# (Run the sudo env PATH... command that PM2 outputs if prompted)
+pm2 save
+
+# Verify running processes
+pm2 status</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 5 -->
+        <div class="step-card glass-panel" id="step-5">
+          <div class="step-badge">STEP 5</div>
+          <div class="step-header">
+            <h3>Configure Nginx Reverse Proxy (Port 80 &rarr; Port 5000)</h3>
+            <span class="step-pill nginx-pill"><i class="fa-solid fa-arrows-split-up-and-left"></i> Nginx</span>
+          </div>
+          <p class="step-text">
+            Nginx listens on public port 80 and transparently forwards requests to your Express app running locally on port 5000.
+          </p>
+          <div class="command-box">
+            <div class="command-box-header">
+              <span>Ubuntu Shell</span>
+              <button class="btn-copy" data-target="cmd-nginx"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+            <pre><code id="cmd-nginx"># Install Nginx
+sudo apt install -y nginx
+
+# Copy the pre-configured Nginx file to sites-available
+sudo cp /var/www/cloudpulse-app/nginx/cloudpulse.conf /etc/nginx/sites-available/cloudpulse
+
+# Update server_name with your EC2 Public IP or Domain
+sudo sed -i 's/YOUR_EC2_PUBLIC_IP_OR_DOMAIN/13.233.54.120/g' /etc/nginx/sites-available/cloudpulse
+
+# Enable the site and remove default site
+sudo ln -sf /etc/nginx/sites-available/cloudpulse /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+
+# Test Nginx syntax and reload
+sudo nginx -t && sudo systemctl restart nginx
+
+# Verify Nginx status
+sudo systemctl status nginx --no-pager</code></pre>
+          </div>
+        </div>
+
+        <!-- Step 6 -->
+        <div class="step-card glass-panel" id="step-6">
+          <div class="step-badge">STEP 6</div>
+          <div class="step-header">
+            <h3>Configure UFW Firewall & Optional Free SSL (Certbot)</h3>
+            <span class="step-pill security-pill"><i class="fa-solid fa-lock"></i> Security</span>
+          </div>
+          <p class="step-text">
+            Lock down Ubuntu's firewall to only allow necessary ports (OpenSSH and Nginx Full) and install a free SSL certificate with Let's Encrypt:
+          </p>
+          <div class="command-box">
+            <div class="command-box-header">
+              <span>Ubuntu Shell</span>
+              <button class="btn-copy" data-target="cmd-ssl"><i class="fa-regular fa-copy"></i> Copy</button>
+            </div>
+            <pre><code id="cmd-ssl"># Configure UFW (Uncomplicated Firewall)
+sudo ufw allow OpenSSH
+sudo ufw allow 'Nginx Full'
+sudo ufw --force enable
+sudo ufw status
+
+# Optional: Add Free HTTPS / SSL with Certbot (Requires a custom domain pointing to your EC2 IP)
+sudo apt install -y certbot python3-certbot-nginx
+# Run certbot (Replace cloudpulse.example.com with your actual domain):
+# sudo certbot --nginx -d cloudpulse.example.com</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4: Live API & Endpoint Tester -->
+    <section id="api-tester" class="section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-tag"><i class="fa-solid fa-code"></i> Developer Console</span>
+          <h2 class="section-title">Live API Endpoint Inspector</h2>
+        </div>
+        <p class="section-desc">
+          Test real endpoints on this server and view live payload responses and round-trip latency.
+        </p>
+      </div>
+
+      <div class="api-tester-container glass-panel">
+        <div class="api-actions-toolbar">
+          <button class="btn btn-api-tab active" data-endpoint="/api/health" data-method="GET" id="btn-api-health">
+            <span class="http-badge get">GET</span> /api/health
+          </button>
+          <button class="btn btn-api-tab" data-endpoint="/api/system" data-method="GET" id="btn-api-system">
+            <span class="http-badge get">GET</span> /api/system
+          </button>
+          <button class="btn btn-api-tab" data-endpoint="/api/echo" data-method="POST" id="btn-api-echo">
+            <span class="http-badge post">POST</span> /api/echo
+          </button>
+        </div>
+
+        <div class="api-console">
+          <div class="console-top-bar">
+            <div class="console-status-group">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+              <span class="console-req-path" id="console-req-path">GET /api/health</span>
+            </div>
+            <div class="console-meta">
+              <span class="console-code" id="console-status-code">Status: 200 OK</span>
+              <span class="console-time" id="console-latency">Latency: -- ms</span>
+            </div>
+          </div>
+          <pre class="console-output"><code id="console-response-body">Click any endpoint button above to test...</code></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: EC2 Cheat Sheet & Essential Commands -->
+    <section class="section">
+      <div class="section-header">
+        <div class="section-title-wrap">
+          <span class="section-tag"><i class="fa-solid fa-book-bookmark"></i> Quick Reference</span>
+          <h2 class="section-title">Essential EC2 & PM2 Commands Cheatsheet</h2>
+        </div>
+      </div>
+
+      <div class="cheatsheet-grid">
+        <div class="cheat-card glass-panel">
+          <div class="cheat-icon"><i class="fa-solid fa-list-check"></i></div>
+          <h4>PM2 Management</h4>
+          <ul>
+            <li><code>pm2 list</code> - View running apps & CPU/RAM</li>
+            <li><code>pm2 logs</code> - Stream live application logs</li>
+            <li><code>pm2 restart all</code> - Restart application</li>
+            <li><code>pm2 monit</code> - Interactive visual terminal monitor</li>
+          </ul>
+        </div>
+
+        <div class="cheat-card glass-panel">
+          <div class="cheat-icon"><i class="fa-solid fa-arrows-spin"></i></div>
+          <h4>Nginx Operations</h4>
+          <ul>
+            <li><code>sudo nginx -t</code> - Test config syntax</li>
+            <li><code>sudo systemctl reload nginx</code> - Zero-downtime reload</li>
+            <li><code>sudo tail -f /var/log/nginx/error.log</code> - Error logs</li>
+            <li><code>sudo tail -f /var/log/nginx/access.log</code> - Access logs</li>
+          </ul>
+        </div>
+
+        <div class="cheat-card glass-panel">
+          <div class="cheat-icon"><i class="fa-solid fa-shield-cat"></i></div>
+          <h4>Ubuntu & System</h4>
+          <ul>
+            <li><code>htop</code> - Live CPU & RAM monitor</li>
+            <li><code>df -h</code> - Check available disk space</li>
+            <li><code>free -m</code> - Check RAM in Megabytes</li>
+            <li><code>sudo journalctl -u nginx -e</code> - Nginx system logs</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <i class="fa-solid fa-server"></i> CloudPulse Deployment Suite
+      </div>
+      <p class="footer-copy">
+        Crafted for hands-on learning: Node.js &bull; Express &bull; PM2 &bull; Nginx &bull; AWS EC2 Ubuntu
+      </p>
+    </div>
+  </footer>
+
+  <!-- Notification Toast -->
+  <div class="toast" id="toast">
+    <i class="fa-solid fa-circle-check"></i>
+    <span id="toast-message">Copied to clipboard!</span>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="/js/app.js"></script>
+</body>
+</html>
